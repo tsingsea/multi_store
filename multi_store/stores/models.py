@@ -1,6 +1,9 @@
 from django.db import models
 
 # Create your models here.
+from django.db.models import UniqueConstraint
+from django.core.exceptions import ValidationError
+
 
 class Store(models.Model):
     store_name = models.CharField(max_length=255)
@@ -32,15 +35,30 @@ class AttributeKey(models.Model):
         (IMAGE, 'Image'),
     ]
 
-    key_name = models.CharField(max_length=255, unique=True)
+    key_name = models.CharField(max_length=255)
     attribute_type = models.CharField(
         max_length=50,
         choices=ATTRIBUTE_TYPE_CHOICES,
         default=TEXT
     )
 
+    class Meta:
+        constraints = [
+            UniqueConstraint(fields=['key_name', 'attribute_type'], name='unique_key_name_type')
+        ]
+
+    def clean(self):
+        # Check for the existence of the same key_name with different types
+        if AttributeKey.objects.filter(key_name=self.key_name).exclude(id=self.id).exists():
+            raise ValidationError(f"An AttributeKey with the name '{self.key_name}' already exists with a different type.")
+
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.key_name} ({self.get_attribute_type_display()})"
+
 
 class StoreAttribute(models.Model):
     store = models.ForeignKey(Store, related_name='attributes', on_delete=models.CASCADE)
