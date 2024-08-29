@@ -37,6 +37,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    'rest_framework',  # 如果使用Django REST framework，建议安装和配置
+    'stores',
 ]
 
 MIDDLEWARE = [
