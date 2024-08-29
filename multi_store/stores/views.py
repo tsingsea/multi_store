@@ -18,3 +18,10 @@ class AttributeKeyViewSet(viewsets.ModelViewSet):
 class StoreAttributeViewSet(viewsets.ModelViewSet):
     queryset = StoreAttribute.objects.all()
     serializer_class = StoreAttributeSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        store_id = self.request.data.get('store') or self.request.query_params.get('store')
+        if store_id:
+            context['store_id'] = store_id
+        return context
