@@ -5,7 +5,8 @@ from .models import Medicine
 from .forms import UploadFileForm
 # Create your views here.
 from .forms import UploadFileForm
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+
 
 def upload_file(request):
     if request.method == 'POST':
@@ -48,12 +49,15 @@ def calculate_price(request):
     if request.method == 'POST':
         # 获取用户输入的通用名和数量
         name = request.POST.get('name')
-        quantity = Decimal(request.POST.get('quantity', 0))
+        try:
+            quantity = Decimal(request.POST.get('quantity', 0))
+        except (ValueError, InvalidOperation):
+            quantity = Decimal(0)
 
         # 从数据库中搜索通用名
         medicine = Medicine.objects.filter(name__icontains=name).first()
 
-        if medicine:
+        if medicine and quantity > 0:
             # 计算价格
             sales_amount = Decimal(medicine.sales_amount)
             sales_quantity = Decimal(medicine.sales_quantity)
@@ -64,7 +68,7 @@ def calculate_price(request):
             calculations.append({
                 'name': medicine.name,
                 'quantity': float(quantity),
-                'price': float(round(price, 2))  # 存储时将 Decimal 转换回 float 并四舍五入
+                'price': float(price.quantize(Decimal('0.001'), rounding=ROUND_HALF_UP))  # 保留三位小数
             })
             request.session['calculations'] = calculations
             request.session.modified = True  # 标记 session 已被修改
@@ -84,20 +88,19 @@ def calculate_price(request):
     calculations = request.session.get('calculations', [])
     total_price = sum(item['price'] for item in calculations)
 
-    # 获取“付数”的输入
-    num_of_doses = request.GET.get('num_of_doses', 1)
+    # 获取“付数”的输入，并允许非整数输入
     try:
-        num_of_doses = int(num_of_doses)
-    except ValueError:
-        num_of_doses = 1
+        num_of_doses = Decimal(request.GET.get('num_of_doses', 1))
+    except (ValueError, InvalidOperation):
+        num_of_doses = Decimal(1)
 
-    total_dose_price = total_price * num_of_doses
+    total_dose_price = total_price * float(num_of_doses)
 
     return render(request, 'calculate.html', {
         'calculations': calculations,
-        'total_price': round(total_price, 2),
-        'num_of_doses': num_of_doses,
-        'total_dose_price': round(total_dose_price, 2)
+        'total_price': round(total_price, 3),
+        'num_of_doses': float(num_of_doses),
+        'total_dose_price': round(total_dose_price, 3)
     })
 
 def clear_calculations(request):

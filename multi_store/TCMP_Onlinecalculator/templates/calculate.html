@@ -43,7 +43,7 @@
                 </div>
                 <div class="mb-3">
                     <label for="quantity" class="form-label">数量(单位：g)</label>
-                    <input type="number" step="0.01" class="form-control" id="quantity" name="quantity" required>
+                    <input type="number" step="0.001" class="form-control" id="quantity" name="quantity" required>
                 </div>
                 <button type="submit" class="btn btn-primary w-100">单项计算价格</button>
             </form>
@@ -69,7 +69,7 @@
             <form method="get" action="{% url 'calculate_price' %}">
                 <div class="mb-3">
                     <label for="num_of_doses" class="form-label">付数:</label>
-                    <input type="number" min="1" step="1" class="form-control" id="num_of_doses" name="num_of_doses"
+                    <input type="number" step="0.001" class="form-control" id="num_of_doses" name="num_of_doses"
                            value="{{ num_of_doses }}">
                 </div>
                 <button type="submit" class="btn btn-success w-100">计算付合计成本</button>
