@@ -84,9 +84,20 @@ def calculate_price(request):
     calculations = request.session.get('calculations', [])
     total_price = sum(item['price'] for item in calculations)
 
+    # 获取“付数”的输入
+    num_of_doses = request.GET.get('num_of_doses', 1)
+    try:
+        num_of_doses = int(num_of_doses)
+    except ValueError:
+        num_of_doses = 1
+
+    total_dose_price = total_price * num_of_doses
+
     return render(request, 'calculate.html', {
         'calculations': calculations,
-        'total_price': round(total_price, 2)
+        'total_price': round(total_price, 2),
+        'num_of_doses': num_of_doses,
+        'total_dose_price': round(total_dose_price, 2)
     })
 
 def clear_calculations(request):
