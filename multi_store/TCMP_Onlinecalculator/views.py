@@ -1,12 +1,13 @@
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+
+import pandas as pd
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
-import pandas as pd
-from .models import Medicine
-from .forms import UploadFileForm
+from pypinyin import lazy_pinyin, Style
+
 # Create your views here.
 from .forms import UploadFileForm
-from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
-from pypinyin import lazy_pinyin, Style
+from .models import Medicine
 
 
 def upload_file(request):
@@ -30,8 +31,10 @@ def upload_file(request):
 
     return render(request, 'upload.html', {'form': form})
 
+
 def success(request):
     return render(request, 'success.html')
+
 
 def search_medicine(request):
     term = request.GET.get('term', '').strip().upper()
@@ -60,6 +63,7 @@ def search_medicine(request):
             return JsonResponse({'results': results}, safe=False)
 
     return JsonResponse({'results': []}, safe=False)
+
 
 def calculate_price(request):
     # 初始化 session 中的 calculations 列表
@@ -122,6 +126,7 @@ def calculate_price(request):
         'num_of_doses': float(num_of_doses),
         'total_dose_price': round(total_dose_price, 3)
     })
+
 
 def clear_calculations(request):
     if 'calculations' in request.session:
