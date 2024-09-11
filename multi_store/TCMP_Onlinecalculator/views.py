@@ -40,22 +40,47 @@ def success(request):
 #         results = [medicine.name for medicine in medicines]
 #         return JsonResponse(results, safe=False)
 #     return JsonResponse([], safe=False)
+# def search_medicine(request):
+#     term = request.GET.get('term', '').strip().upper()
+#
+#     # 搜索匹配的药品
+#     if term:
+#         medicines = Medicine.objects.all()
+#         results = []
+#         for medicine in medicines:
+#             pinyin_abbr = ''.join([p[0].upper() for p in lazy_pinyin(medicine.name, style=Style.FIRST_LETTER)])
+#             if pinyin_abbr.startswith(term) or medicine.name.find(term) != -1:
+#                 results.append(medicine.name)
+#     else:
+#         results = []
+#
+#     return JsonResponse(results, safe=False)
 def search_medicine(request):
     term = request.GET.get('term', '').strip().upper()
 
-    # 搜索匹配的药品
     if term:
         medicines = Medicine.objects.all()
         results = []
+        exact_match = None
+
         for medicine in medicines:
             pinyin_abbr = ''.join([p[0].upper() for p in lazy_pinyin(medicine.name, style=Style.FIRST_LETTER)])
-            if pinyin_abbr.startswith(term) or medicine.name.find(term) != -1:
+
+            # 精确匹配
+            if pinyin_abbr == term:
+                exact_match = medicine.name
+                break
+            # 模糊匹配
+            elif pinyin_abbr.startswith(term) or medicine.name.find(term) != -1:
                 results.append(medicine.name)
-    else:
-        results = []
 
-    return JsonResponse(results, safe=False)
+        # 如果有精确匹配，优先返回精确匹配结果
+        if exact_match:
+            return JsonResponse({'exact_match': exact_match}, safe=False)
+        else:
+            return JsonResponse({'results': results}, safe=False)
 
+    return JsonResponse({'results': []}, safe=False)
 
 def calculate_price(request):
     # 初始化 session 中的 calculations 列表

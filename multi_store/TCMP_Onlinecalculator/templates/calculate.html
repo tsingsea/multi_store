@@ -37,7 +37,7 @@
             <form method="post" action="{% url 'calculate_price' %}">
                 {% csrf_token %}
                 <div class="mb-3">
-                    <label for="name" class="form-label">中药通用名（可以输入"MH"匹配"麻黄"，关键词可在下拉框选择，修复默认英文输入bug，Update DateTime：202109111825）</label>
+                    <label for="name" class="form-label">中药通用名（可以输入"MH"匹配"麻黄"，关键词可在下拉框选择，修复默认英文输入bug，举例：当"szr"完全匹配"酸枣仁"则无需再选择节约时间，Update DateTime：202109111855）</label>
                     <input type="text" class="form-control" id="name" name="name" required autocomplete="off">
                     <div id="name-suggestions" class="list-group position-absolute w-100" style="z-index: 1000;"></div>
                 </div>
@@ -106,12 +106,19 @@
                     success: function (data) {
                         let suggestions = $("#name-suggestions");
                         suggestions.empty();
-                        if (data.length > 0) {
+
+                        // 检查是否有精确匹配结果
+                        if (data.exact_match) {
+                            // 直接将精确匹配结果填充到输入框
+                            $("#name").val(data.exact_match);
+                            suggestions.hide();
+                        } else if (data.results.length > 0) {
                             suggestions.show();
-                            data.forEach(function (item) {
+                            data.results.forEach(function (item) {
                                 suggestions.append(`<a href="#" class="list-group-item list-group-item-action">${item}</a>`);
                             });
 
+                            // 用户点击下拉框中的选项时，自动填充到输入框
                             $(".list-group-item").click(function (e) {
                                 e.preventDefault();
                                 $("#name").val($(this).text());
@@ -127,6 +134,7 @@
             }
         });
 
+        // 点击页面其他地方时隐藏下拉框
         $(document).click(function (e) {
             if (!$(e.target).closest("#name-suggestions, #name").length) {
                 $("#name-suggestions").hide();
