@@ -38,24 +38,25 @@ def search_medicine(request):
 
     if term:
         medicines = Medicine.objects.all()
-        results = []
-        exact_match = None
+        matching_medicines = []
 
         for medicine in medicines:
             pinyin_abbr = ''.join([p[0].upper() for p in lazy_pinyin(medicine.name, style=Style.FIRST_LETTER)])
 
-            # 精确匹配
-            if pinyin_abbr == term:
-                exact_match = medicine.name
-                break
-            # 模糊匹配
-            elif pinyin_abbr.startswith(term) or medicine.name.find(term) != -1:
-                results.append(medicine.name)
+            # 判断是否匹配
+            if pinyin_abbr.startswith(term) or term in medicine.name:
+                matching_medicines.append({'name': medicine.name, 'pinyin_abbr': pinyin_abbr})
 
-        # 如果有精确匹配，优先返回精确匹配结果
-        if exact_match:
+        # 查找拼音首字母完全匹配的药品
+        exact_matches = [med for med in matching_medicines if med['pinyin_abbr'] == term]
+
+        if len(exact_matches) == 1 and len(matching_medicines) == 1:
+            # 只有一个匹配项，且拼音首字母完全匹配，自动填充
+            exact_match = exact_matches[0]['name']
             return JsonResponse({'exact_match': exact_match}, safe=False)
         else:
+            # 返回所有匹配项供用户选择
+            results = [med['name'] for med in matching_medicines]
             return JsonResponse({'results': results}, safe=False)
 
     return JsonResponse({'results': []}, safe=False)
