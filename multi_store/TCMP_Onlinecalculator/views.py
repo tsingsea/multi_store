@@ -6,6 +6,7 @@ from .forms import UploadFileForm
 # Create your views here.
 from .forms import UploadFileForm
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from pypinyin import lazy_pinyin, Style
 
 
 def upload_file(request):
@@ -32,13 +33,28 @@ def upload_file(request):
 def success(request):
     return render(request, 'success.html')
 
+# def search_medicine(request):
+#     if request.headers.get('x-requested-with') == 'XMLHttpRequest' and request.GET.get('term'):
+#         term = request.GET.get('term')
+#         medicines = Medicine.objects.filter(name__icontains=term)
+#         results = [medicine.name for medicine in medicines]
+#         return JsonResponse(results, safe=False)
+#     return JsonResponse([], safe=False)
 def search_medicine(request):
-    if request.headers.get('x-requested-with') == 'XMLHttpRequest' and request.GET.get('term'):
-        term = request.GET.get('term')
-        medicines = Medicine.objects.filter(name__icontains=term)
-        results = [medicine.name for medicine in medicines]
-        return JsonResponse(results, safe=False)
-    return JsonResponse([], safe=False)
+    term = request.GET.get('term', '').strip().upper()
+
+    # 搜索匹配的药品
+    if term:
+        medicines = Medicine.objects.all()
+        results = []
+        for medicine in medicines:
+            pinyin_abbr = ''.join([p[0].upper() for p in lazy_pinyin(medicine.name, style=Style.FIRST_LETTER)])
+            if pinyin_abbr.startswith(term) or medicine.name.find(term) != -1:
+                results.append(medicine.name)
+    else:
+        results = []
+
+    return JsonResponse(results, safe=False)
 
 
 def calculate_price(request):
